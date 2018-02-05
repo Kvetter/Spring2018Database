@@ -4,7 +4,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
-import static javax.script.ScriptEngine.FILENAME;
 
 public class Hashmap_DB {
 
@@ -17,7 +16,7 @@ public class Hashmap_DB {
      * @throws IOException
      */
     public Hashmap_DB () throws IOException {
-        file = new File(System.getProperty("user.dir") + "/src/DB/database");
+        file = new File(System.getProperty("user.dir") + "/DB/database");
         raf = new RandomAccessFile(file, "rw");
         map = createHashMap();
     }
@@ -34,8 +33,11 @@ public class Hashmap_DB {
             // A loop that reads a line from our file, splitting it so we only get the key
             // and getting the byte offset to store in our hashmap
             for (Long i = Long.valueOf(0); i < raf.length(); i = raf.getFilePointer()) {
+                String keyBuilder = new String();
                 Long pointer = raf.getFilePointer();
-                hashmap.put(raf.readLine().split(",")[0], pointer);
+                String[] line = raf.readLine().replace(" ", "").split("00101100");
+                keyBuilder += (char) Integer.parseInt(line[0], 2);
+                hashmap.put(keyBuilder, pointer);
             }
             return hashmap;
         } else {
@@ -52,9 +54,17 @@ public class Hashmap_DB {
     public String dbRead(String key) throws IOException {
         // Setting the offset to the value, so we know exactly where our data is stored in the database file
         raf.seek(map.get(key));
-        String line = raf.readLine();
+        String[] dataLine = raf.readLine().split("00101100 ");
+        // Replace key with nothing
+        //String[] lines = dataLine.split("\\s+");
+        // Convert the binary string to a human readable value
+        String data = new String();
+        String[] valueData = dataLine[1].split("\\s+");
+        for (String value : valueData) {
+                data += (char) Integer.parseInt(value, 2);
+        }
         //Removing the key, so we only show the value
-        return line.replaceAll(".*,", "");
+        return data.toString().replaceAll(".*,", "");
     }
 
     /**
@@ -67,7 +77,12 @@ public class Hashmap_DB {
         String data = key + "," + value;
         byte[] byteArray = data.getBytes(StandardCharsets.UTF_8);
         map.put(key, raf.getFilePointer());
-        raf.write(data.getBytes());
+        // Convert the value to binary
+        String byteData = "";
+        for (byte b : byteArray) {
+            byteData += String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0').concat(" ");
+        }
+        raf.writeBytes(byteData);
         raf.writeBytes(System.getProperty("line.separator"));
     }
 
