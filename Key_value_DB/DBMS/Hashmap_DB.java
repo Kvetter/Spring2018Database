@@ -38,9 +38,12 @@ public class Hashmap_DB {
                 //Getting the byte offset
                 Long pointer = raf.getFilePointer();
                 //Reading a line from our database, where we split on the byte value for a comma (,)
-                String[] line = raf.readLine().replace(" ", "").split("00101100");
+                String[] line = raf.readLine().split("00101100 ");
                 //Parsing the byte value to a string so it can be read
-                keyBuilder += (char) Integer.parseInt(line[0], 2);
+                String[] keyData = line[0].split("\\s+");
+                for (String key : keyData) {
+                    keyBuilder += (char) Integer.parseInt(key, 2);
+                }
                 //Saving the key and byte offset in our hashmap
                 hashmap.put(keyBuilder, pointer);
             }
