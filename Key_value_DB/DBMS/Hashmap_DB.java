@@ -33,10 +33,15 @@ public class Hashmap_DB {
             // A loop that reads a line from our file, splitting it so we only get the key
             // and getting the byte offset to store in our hashmap
             for (Long i = Long.valueOf(0); i < raf.length(); i = raf.getFilePointer()) {
+                //String to store data from our file
                 String keyBuilder = new String();
+                //Getting the byte offset
                 Long pointer = raf.getFilePointer();
+                //Reading a line from our database, where we split on the byte value for a comma (,)
                 String[] line = raf.readLine().replace(" ", "").split("00101100");
+                //Parsing the byte value to a string so it can be read
                 keyBuilder += (char) Integer.parseInt(line[0], 2);
+                //Saving the key and byte offset in our hashmap
                 hashmap.put(keyBuilder, pointer);
             }
             return hashmap;
@@ -48,15 +53,15 @@ public class Hashmap_DB {
     /**
      * We set the byte offset and reads the data from our database file
      * @param key
-     * @return The value as a String
+     * @return String
      * @throws IOException
      */
     public String dbRead(String key) throws IOException {
         // Setting the offset to the value, so we know exactly where our data is stored in the database file
         raf.seek(map.get(key));
+        //Reads the data and splitting it on the byte value for a comma (,)
         String[] dataLine = raf.readLine().split("00101100 ");
-        // Replace key with nothing
-        //String[] lines = dataLine.split("\\s+");
+
         // Convert the binary string to a human readable value
         String data = new String();
         String[] valueData = dataLine[1].split("\\s+");
@@ -75,14 +80,18 @@ public class Hashmap_DB {
      */
     public void dbWrite (String key, String value) throws IOException {
         String data = key + "," + value;
+        // Creating a byte array to store our key and value
         byte[] byteArray = data.getBytes(StandardCharsets.UTF_8);
+        //Saving the key and byte offset in our hashmap
         map.put(key, raf.getFilePointer());
         // Convert the value to binary
         String byteData = "";
         for (byte b : byteArray) {
             byteData += String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0').concat(" ");
         }
+        //Saves the binary data in the db file
         raf.writeBytes(byteData);
+        //Creating a newline in the db file
         raf.writeBytes(System.getProperty("line.separator"));
     }
 
